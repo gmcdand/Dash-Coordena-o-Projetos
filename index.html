@@ -3,7 +3,7 @@
 {
   "name": "Coordenacao Projetos Dashboard",
   "schemaVersion": 1,
-  "lastMondaySync": "2026-08-18",
+  "lastMondaySync": "2026-08-24",
   "description": "Painel de tarefas da Coordenação de Projetos (Monday) — filtra por projeto e por semana/mês/ano, mostra resumo por status, tarefas do período ordenadas por urgência (dias até finalização prevista), o que entra no radar no próximo período, e uma linha do tempo por projeto. Atualizado automaticamente toda 2ª feira às 8h.",
   "mcpTools": [],
   "mcpServerNames": []
@@ -254,7 +254,7 @@
       <span class="owl">🦉</span>
       <div>
         <h1 id="pageTitle">Coordenação de Projetos — Painel de Tarefas</h1>
-        <p class="sub" id="pageSub">Instituto Ismart · dados extraídos em 18/08/2026 — peça uma atualização quando precisar de um snapshot novo</p>
+        <p class="sub" id="pageSub">Instituto Ismart · dados extraídos em 24/08/2026 — peça uma atualização quando precisar de um snapshot novo</p>
       </div>
     </div>
     <button class="theme-btn" id="themeToggle">🌓 Modo escuro</button>
@@ -380,12 +380,12 @@ const TASKS = [
   // Projeto Ecossistema
   t('ecossistema','Protocolos EB Presencial / ES / IOL/ADI','Produção dos protocolos','Em andamento','2026-07-01','2026-10-31','12723628297'),
   t('ecossistema','Protocolos EB Presencial / ES / IOL/ADI','Validação dos protocolos pelo Comitê de Saúde Mental','Em andamento','2026-07-01','2026-10-31','12723628298'),
-  t('ecossistema','Protocolos EB Presencial / ES / IOL/ADI','Publicação dos Protocolos e do Duty of Care','Planejado','2026-09-15','2026-09-15','12723628299'),
+  t('ecossistema','Protocolos EB Presencial / ES / IOL/ADI','Publicação dos Protocolos e do Duty of Care','Planejado','2026-09-30','2026-09-30','12723628299'),
   t('ecossistema','Scorecard 2.0','Definir critérios para a segmentação das escolas','Concluído','2026-07-01','2026-07-31','12723628300'),
   t('ecossistema','Scorecard 2.0','Coletar os dados das escolas','Concluído','2026-07-01','2026-07-31','12723628301'),
   t('ecossistema','Scorecard 2.0','Construir o scorecard e publicar','Concluído','2026-08-01','2026-08-10','12723952424'),
   t('ecossistema','Scorecard 2.0','Validar com a equipe a funcionalidade e coletar feedbacks','Concluído','2026-08-10','2026-08-31','12723969493'),
-  t('ecossistema','Treinamento com responsáveis','Definir temas, formato e responsáveis pelo treinamento','Atrasado','2026-08-01','2026-08-31','12723966279'),
+  t('ecossistema','Treinamento com responsáveis','Definir temas, formato e responsáveis pelo treinamento','Em andamento','2026-08-01','2026-08-31','12723966279'),
   t('ecossistema','Treinamento com responsáveis','Construir uma régua de comunicação','Atrasado','2026-08-01','2026-08-31','12724099977'),
   t('ecossistema','Treinamento com responsáveis','Realizar treinamento 1','Planejado','2026-09-01','2026-09-30','12723966251'),
   t('ecossistema','Treinamento com responsáveis','Realizar treinamento 2','Planejado','2026-10-01','2026-10-31','12723981077'),
@@ -397,17 +397,17 @@ const TASKS = [
   t('cluster','Parte 2: Lógica da ferramenta','Construir uma ferramenta de clusterização para classificação dos alunos (definição de regras de negócio de classificação, inclusive de outlier)','Em andamento','2026-08-10','2026-08-30','12620322560'),
   t('cluster','Parte 2: Lógica da ferramenta','Validar a ferramenta e os critérios','Planejado','2026-08-24','2026-09-06','12620261052'),
   t('cluster','Parte 2: Lógica da ferramenta','Rodar um piloto com 3 orientadores','Planejado','2026-09-07','2026-09-20','12825899940'),
-  t('cluster','Parte 2: Lógica da ferramenta','Aplicar as alterações da ferramenta de Tiers - Versão 1','Planejado','2026-10-06','2026-10-14','12620308027'),
+  t('cluster','Parte 2: Lógica da ferramenta','Aplicar as alterações da ferramenta de Tiers - Versão 1','Planejado','2026-10-05','2026-10-14','12620308027'),
   t('cluster','Parte 2: Lógica da ferramenta','Fazer alterações na V1 da nova ferramenta de Tier','Planejado','2026-10-15','2026-10-31','12825932375'),
   t('cluster','Parte 2: Lógica da ferramenta','Aplicar a V2 da ferramenta de Tier','Planejado','2026-11-02','2026-11-10','12825911115'),
   t('cluster','Parte 2: Lógica da ferramenta','Aplicar a ferramenta de Clusterização no recorte Outubro + Novembro','Planejado','2026-11-11','2026-11-29','12825919325'),
   t('cluster','Parte 2: Lógica da ferramenta','Construir plano de ação para transição de cluster','Planejado','2026-11-02','2026-11-30','12724533746'),
-  t('cluster','Parte 3: Consumo da ferramenta','Definição dos ciclos de classificação e divulgação interna','Planejado','2026-08-10','2026-08-30','12620280069'),
+  t('cluster','Parte 3: Consumo da ferramenta','Definição dos ciclos de classificação e divulgação interna','Em andamento','2026-08-10','2026-08-30','12620280069'),
   t('cluster','Parte 3: Consumo da ferramenta','Definição do destino das demais classificações e dos responsáveis pelo abastecimento contínuo','Planejado','2026-08-31','2026-09-13','12620321140'),
 
   // Projeto 0,01% (Outliers)
-  t('outliers','Parte 1: Incorporação da metodologia','Acompanhar o evento do Future Lab da Telles Foundation','Em andamento','2026-07-13','2026-08-21','12628068077'),
-  t('outliers','Parte 1: Incorporação da metodologia','Mapear perfil da persona Aluno Ismart que performou bem no evento','Em andamento','2026-07-23','2026-08-31','12628147039'),
+  t('outliers','Parte 1: Incorporação da metodologia','Acompanhar o evento do Future Lab da Telles Foundation','Concluído','2026-07-13','2026-08-21','12628068077'),
+  t('outliers','Parte 1: Incorporação da metodologia','Mapear perfil da persona Aluno Ismart que performou bem no evento','Concluído','2026-07-23','2026-08-31','12628147039'),
   t('outliers','Parte 2: Critérios para indicação','Definir critérios que credenciam alunos Ismart a participar de programas futuros','Planejado','2026-09-21','2026-10-11','12628082852'),
   t('outliers','Parte 2: Critérios para indicação','Mapear se os indicadores já existentes em EB, ES, IOL e ADI conseguem atender à demanda de indicação','Planejado','2026-09-21','2026-10-11','12628147163'),
   t('outliers','Parte 2: Critérios para indicação','Definir ciclos de classificação de aluno "Potencial Outlier"','Planejado','2026-09-21','2026-10-11','12628266210'),
@@ -431,7 +431,7 @@ const SUBITEMS = {
     sub('Protocolo Risco Suicida','Concluído','2026-07-31','https://ismart2.monday.com/boards/18425227153/pulses/12723723632'),
     sub('Protocolo Família Indisponível ou Incapaz','Concluído','2026-07-31','https://ismart2.monday.com/boards/18425227153/pulses/12723688672'),
     sub('Protocolo Sofrimento Psíquico e Crises em Saúde Mental','Concluído','2026-08-10','https://ismart2.monday.com/boards/18425227153/pulses/12723705935'),
-    sub('Protocolo Violência','Em andamento','2026-08-24','https://ismart2.monday.com/boards/18425227153/pulses/12761390468'),
+    sub('Protocolo Violência','Atrasado','2026-08-24','https://ismart2.monday.com/boards/18425227153/pulses/12761390468'),
     sub('Protocolo Substâncias e comportamentos aditivos','Planejado','2026-09-08','https://ismart2.monday.com/boards/18425227153/pulses/12761389211'),
     sub('Protocolo Bullying e Cyberbullying','Planejado','2026-09-21','https://ismart2.monday.com/boards/18425227153/pulses/12761365023'),
     sub('Protocolo Discriminação','Planejado','2026-10-05','https://ismart2.monday.com/boards/18425227153/pulses/12761395263'),
@@ -447,8 +447,8 @@ const SUBITEMS = {
   ],
   '12727645884': [ // Pilotar a pesquisa de bem-estar conduzida pela Dendenzê
     sub('Definir escolas para aplicação de piloto','Concluído','2026-08-16','https://ismart2.monday.com/boards/18425237794/pulses/12727667500'),
-    sub('Validar as perguntas da pesquisa','Em andamento','2026-08-23','https://ismart2.monday.com/boards/18425237794/pulses/12727675509'),
-    sub('Comunicar as 3 escolas sobre a pesquisa','Em andamento','2026-08-23','https://ismart2.monday.com/boards/18425237794/pulses/12797257687'),
+    sub('Validar as perguntas da pesquisa','Concluído','2026-08-23','https://ismart2.monday.com/boards/18425237794/pulses/12727675509'),
+    sub('Comunicar as 3 escolas sobre a pesquisa','Concluído','2026-08-23','https://ismart2.monday.com/boards/18425237794/pulses/12797257687'),
     sub('Aplicação da pesquisa piloto em 3 escolas','Planejado','2026-09-06','https://ismart2.monday.com/boards/18425237794/pulses/12734417581'),
   ],
   '12724386288': [ // Definir periodicidade das ações
@@ -459,7 +459,7 @@ const SUBITEMS = {
 };
 let expandedTasks = new Set();
 
-const TODAY = new Date('2026-08-18T00:00:00');
+const TODAY = new Date('2026-08-24T00:00:00');
 
 /* ---------- date helpers ---------- */
 function startOfWeek(d){ const dt=new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
@@ -866,7 +866,7 @@ document.getElementById('mainTabs').addEventListener('click', e=>{
     ? 'Coordenação de Projetos — Painel de Tarefas'
     : 'Coordenação de Projetos — Painel de Metas';
   document.getElementById('pageSub').textContent = view==='tasks'
-    ? 'Workspace Monday · 4 quadros · dados extraídos em 18/08/2026 (snapshot — peça um novo para atualizar)'
+    ? 'Workspace Monday · 4 quadros · dados extraídos em 24/08/2026 (snapshot — peça um novo para atualizar)'
     : 'Snapshot do Painel de Metas 2026 baixado em 07/08/26 · metas ligadas aos projetos (Painel Global excluído)';
   if(view==='goals') renderGoals();
 });
