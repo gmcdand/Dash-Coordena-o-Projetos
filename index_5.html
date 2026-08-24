@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Coordenacao Projetos Dashboard",
+  "schemaVersion": 1,
+  "lastMondaySync": "2026-08-24",
+  "description": "Painel de tarefas da Coordenação de Projetos (Monday) — filtra por projeto e por semana/mês/ano, mostra resumo por status, tarefas do período ordenadas por urgência (dias até finalização prevista), o que entra no radar no próximo período, e uma linha do tempo por projeto. Atualizado automaticamente toda 2ª feira às 8h.",
+  "mcpTools": [],
+  "mcpServerNames": []
+}
+</script>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coordenação de Projetos — Painel de Tarefas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Lato:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme: light;
+    /* ---- identidade Ismart ---- */
+    --ismart-blue:    #008ED3;
+    --ismart-blue-dk: #006FA8;
+    --ismart-navy:    #002A66;
+    --ismart-coral:   #F1655D;
+    --ismart-berry:   #924A7C;
+    --ismart-teal:    #008B87;
+    --ismart-green:   #53A451;
+    --ismart-amber:   #E69500;
+    --ismart-cream:   #EBE5DE;
+
+    --surface-1:      #ffffff;
+    --page-plane:     #FAF7F3;
+    --text-primary:   var(--ismart-navy);
+    --text-secondary: #5B6472;
+    --text-muted:     #96968f;
+    --gridline:       #ece7e0;
+    --border:         rgba(0,42,102,0.10);
+    --card-shadow:    0 2px 10px rgba(0,42,102,0.06);
+
+    --status-concluido:   var(--ismart-green);
+    --status-andamento:   var(--ismart-blue);
+    --status-atencao:     var(--ismart-amber);
+    --status-atrasado:    var(--ismart-coral);
+    --status-planejado:   var(--ismart-berry);
+    --status-naoiniciado: #9aa1ac;
+
+    --proj-1: var(--ismart-blue);  /* Ecossistema */
+    --proj-2: var(--ismart-coral); /* Cluster de Excelência */
+    --proj-3: var(--ismart-teal);  /* 0,01% Outliers */
+    --proj-4: var(--ismart-amber); /* Comitê Destaques */
+    --proj-5: var(--ismart-berry); /* Parcerias Escolares */
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --surface-1: #16202c; --page-plane:#0d1420; --text-primary:#f3f6fa;
+      --text-secondary:#aab4c2; --text-muted:#6f7b8c; --gridline:#263243;
+      --border: rgba(255,255,255,0.10);
+      --card-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      --status-andamento:#3ba7ec; --status-planejado:#c07dab;
+      --proj-1:#3ba7ec; --proj-2:#f5867f; --proj-3:#28b0ab; --proj-4:#f0ac33; --proj-5:#c07dab;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface-1: #16202c; --page-plane:#0d1420; --text-primary:#f3f6fa;
+    --text-secondary:#aab4c2; --text-muted:#6f7b8c; --gridline:#263243;
+    --border: rgba(255,255,255,0.10);
+    --card-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    --status-andamento:#3ba7ec; --status-planejado:#c07dab;
+    --proj-1:#3ba7ec; --proj-2:#f5867f; --proj-3:#28b0ab; --proj-4:#f0ac33; --proj-5:#c07dab;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"Lato", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background:var(--page-plane); color:var(--text-primary); line-height:1.5;
+  }
+  h1,h2,h3{font-family:"Montserrat", "Lato", sans-serif;}
+  .wrap{max-width:1180px; margin:0 auto; padding:26px 20px 70px;}
+
+  /* ---- top bar (Ismart-style) ---- */
+  header.top{
+    display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; flex-wrap:wrap;
+    background:var(--ismart-navy); color:#fff; border-radius:16px; padding:16px 22px;
+  }
+  header.top .brandrow{display:flex; align-items:center; gap:12px;}
+  header.top .owl{
+    width:38px; height:38px; border-radius:50%; background:var(--ismart-blue); display:flex; align-items:center;
+    justify-content:center; font-size:1.2rem; flex:none;
+  }
+  h1{font-size:1.15rem; margin:0 0 2px; color:#fff; font-weight:700; letter-spacing:.01em;}
+  .sub{color:#c9d6ea; font-size:0.82rem; margin:0;}
+  .theme-btn{
+    border:1px solid rgba(255,255,255,0.25); background:rgba(255,255,255,0.08); color:#fff;
+    padding:8px 14px; border-radius:999px; font-size:0.8rem; cursor:pointer; font-family:inherit;
+  }
+  .theme-btn:hover{background:rgba(255,255,255,0.16);}
+
+  .card{
+    background:var(--surface-1); border:1px solid var(--border); border-radius:16px;
+    box-shadow:var(--card-shadow); padding:20px 22px; margin-bottom:16px;
+  }
+  .card > .helper{font-size:0.82rem; color:var(--text-secondary); margin:0 0 14px;}
+
+  .filters{display:flex; flex-wrap:wrap; gap:18px; align-items:center;}
+  .filters .fgroup{display:flex; flex-direction:column; gap:5px;}
+  .filters label{font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; font-weight:700;}
+  select{
+    font-family:inherit; font-size:0.88rem; padding:8px 12px; border-radius:999px;
+    border:1px solid var(--border); background:var(--page-plane); color:var(--text-primary);
+  }
+  .seg{display:inline-flex; border-radius:999px; background:var(--page-plane); padding:3px; gap:2px;}
+  .seg button{
+    font-family:inherit; font-size:0.84rem; padding:7px 14px; border:none; background:none; border-radius:999px;
+    color:var(--text-secondary); cursor:pointer; font-weight:600;
+  }
+  .seg button.active{background:var(--ismart-blue); color:#fff;}
+  .nav{display:flex; align-items:center; gap:10px;}
+  .nav button{
+    width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:var(--page-plane);
+    color:var(--ismart-navy); cursor:pointer; font-size:0.9rem;
+  }
+  .nav button:hover{background:var(--ismart-blue); color:#fff; border-color:var(--ismart-blue);}
+  .nav .label{font-weight:700; font-size:0.9rem; min-width:200px; text-align:center; color:var(--text-primary);}
+  .today-btn{
+    font-family:inherit; font-size:0.82rem; font-weight:700; padding:8px 14px; border-radius:999px; border:none;
+    background:var(--ismart-cream); color:var(--ismart-navy); cursor:pointer;
+  }
+  .today-btn:hover{background:var(--ismart-blue); color:#fff;}
+
+  .tiles{display:grid; grid-template-columns:repeat(6,1fr); gap:10px;}
+  @media (max-width:900px){ .tiles{grid-template-columns:repeat(3,1fr);} }
+  @media (max-width:560px){ .tiles{grid-template-columns:repeat(2,1fr);} }
+  .tile{border-radius:14px; padding:14px 10px; text-align:center; background:var(--page-plane);}
+  .tile .n{font-size:1.7rem; font-weight:800; font-variant-numeric: tabular-nums; font-family:"Montserrat", sans-serif;}
+  .tile .l{font-size:0.72rem; color:var(--text-secondary); margin-top:3px; display:flex; align-items:center; justify-content:center; gap:5px; font-weight:600;}
+  .dot{width:9px; height:9px; border-radius:50%; display:inline-block; flex:none;}
+
+  h2.section-title{font-size:1.02rem; margin:0 0 4px; color:var(--ismart-navy); font-weight:700;}
+  .section-note{font-size:0.82rem; color:var(--text-muted); margin:0 0 14px;}
+
+  table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  thead th{
+    text-align:left; font-size:0.72rem; text-transform:uppercase; letter-spacing:.03em;
+    color:var(--text-muted); border-bottom:2px solid var(--gridline); padding:8px 10px; font-weight:700;
+  }
+  tbody td{padding:11px 10px; border-bottom:1px solid var(--gridline); vertical-align:top;}
+  tbody tr:hover td{background:var(--page-plane);}
+  tbody tr:last-child td{border-bottom:none;}
+  .proj-chip{display:inline-flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700;}
+  .proj-chip .dot{width:8px;height:8px;}
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:0.76rem; font-weight:700; padding:4px 10px;
+    border-radius:999px; white-space:nowrap;
+  }
+  .period-txt{color:var(--text-secondary); font-size:0.82rem; white-space:nowrap;}
+  .empty-msg{color:var(--text-muted); font-size:0.85rem; padding:14px 4px;}
+  .sub-toggle{
+    display:inline-flex; align-items:center; gap:3px; margin-left:8px; font-family:inherit; font-size:0.72rem;
+    font-weight:700; color:var(--ismart-blue-dk); background:var(--page-plane); border:1px solid var(--border);
+    border-radius:999px; padding:2px 9px; cursor:pointer; vertical-align:middle;
+  }
+  .sub-toggle:hover{background:var(--ismart-blue); color:#fff; border-color:var(--ismart-blue);}
+  tr.sub-row td{background:var(--page-plane); border-bottom:1px solid var(--gridline);}
+  tr.sub-row:last-child td{border-bottom:1px solid var(--gridline);}
+  .sub-cell{padding-left:26px !important; display:flex; align-items:baseline; gap:6px;}
+  .sub-bullet{color:var(--text-muted); font-size:0.8rem;}
+  .sub-link{font-weight:600; font-size:0.82rem;}
+  .urgency{font-size:0.78rem; font-weight:700; white-space:nowrap;}
+  .urgency-late{color:var(--status-atrasado);}
+  .urgency-today{color:var(--status-atrasado);}
+  .urgency-soon{color:var(--status-atencao);}
+  .urgency-mid{color:var(--status-andamento);}
+  .urgency-far{color:var(--text-muted); font-weight:600;}
+  .urgency-sub-flag{cursor:help; font-size:0.72rem;}
+
+  /* timeline / gantt */
+  .tl-wrap{overflow-x:auto;}
+  .tl-row{display:flex; align-items:center; margin-bottom:10px;}
+  .tl-label{width:190px; flex:none; font-size:0.8rem; font-weight:700; display:flex; align-items:center; gap:6px; padding-right:8px;}
+  .tl-track{position:relative; flex:1; height:30px; min-width:640px; background:var(--page-plane); border-radius:8px;}
+  .tl-band{position:absolute; top:-4px; bottom:-4px; background:var(--ismart-blue); opacity:0.12; border-left:2px solid var(--ismart-blue); border-right:2px solid var(--ismart-blue); border-radius:6px;}
+  .tl-bar{
+    position:absolute; top:5px; height:20px; border-radius:5px; cursor:pointer;
+    box-shadow:0 0 0 2px var(--surface-1);
+  }
+  .tl-axis{display:flex; margin-left:190px; position:relative; height:18px; min-width:640px;}
+  .tl-axis span{position:absolute; font-size:0.68rem; color:var(--text-muted); transform:translateX(-50%);}
+  .legend{display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; font-size:0.78rem; color:var(--text-secondary);}
+  .legend .it{display:flex; align-items:center; gap:6px;}
+
+  .tooltip{
+    position:fixed; pointer-events:none; background:var(--ismart-navy); color:#fff;
+    font-size:0.76rem; padding:7px 10px; border-radius:8px; max-width:280px; z-index:50; opacity:0; transition:opacity .08s;
+    box-shadow:0 4px 12px rgba(0,0,0,.25);
+  }
+  footer.note{font-size:0.78rem; color:var(--text-muted); margin-top:6px; line-height:1.5;}
+  a.item-link{color:var(--ismart-blue-dk); text-decoration:none; font-weight:600;}
+  a.item-link:hover{text-decoration:underline;}
+
+  /* ---- tabs ---- */
+  .tabs{display:flex; gap:8px; margin-bottom:18px;}
+  .tabs button{
+    font-family:"Montserrat", sans-serif; font-size:0.88rem; font-weight:700; padding:11px 20px; border:none;
+    background:var(--surface-1); color:var(--text-secondary); cursor:pointer; border-radius:999px;
+    border:1px solid var(--border); box-shadow:var(--card-shadow);
+  }
+  .tabs button.active{color:#fff; background:var(--ismart-blue); border-color:var(--ismart-blue);}
+  .view-intro{font-size:0.86rem; color:var(--text-secondary); margin:0 0 16px; max-width:760px;}
+
+  /* ---- goals view ---- */
+  .goal-card{border-radius:16px; margin-bottom:16px; overflow:hidden; background:var(--surface-1); box-shadow:var(--card-shadow); border-left:6px solid var(--ismart-blue);}
+  .goal-head{padding:18px 22px; border-bottom:1px solid var(--gridline); display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;}
+  .goal-head h3{margin:0 0 5px; font-size:1.05rem; color:var(--ismart-navy);}
+  .goal-diretriz{font-size:0.8rem; color:var(--text-secondary); margin:0 0 10px; max-width:640px;}
+  .goal-meta-row{display:flex; gap:8px; flex-wrap:wrap; font-size:0.74rem; color:var(--text-secondary);}
+  .goal-meta-row span{background:var(--page-plane); border-radius:999px; padding:4px 11px; font-weight:600;}
+  .goal-progress{min-width:220px; text-align:right;}
+  .goal-progress .pct{font-size:1.9rem; font-weight:800; font-variant-numeric:tabular-nums; font-family:"Montserrat", sans-serif; color:var(--ismart-navy);}
+  .goal-progress .band{font-size:0.76rem; color:var(--text-secondary); margin-top:2px;}
+  .bandbar{display:flex; height:9px; border-radius:999px; overflow:hidden; background:var(--gridline); margin-top:8px; width:220px; margin-left:auto;}
+  .bandbar .fill{background:var(--ismart-green); transition:width .2s;}
+  .goal-body{padding:8px 22px 20px;}
+  .marco{border-radius:12px; padding:13px 16px; margin-top:10px; display:grid; grid-template-columns:24px 1fr 240px; gap:14px; align-items:start; background:var(--page-plane);}
+  @media (max-width:860px){ .marco{grid-template-columns:24px 1fr; } .marco-attach{grid-column:1 / -1; margin-top:4px;} }
+  .marco input[type=checkbox]{width:20px; height:20px; margin-top:1px; accent-color:var(--ismart-green); cursor:pointer;}
+  .marco-title{font-weight:700; font-size:0.9rem; margin:0 0 4px; color:var(--text-primary);}
+  .marco-title.done{color:var(--ismart-green);}
+  .marco-title.done::after{content:" ✓ atingido"; font-weight:700; font-size:0.78rem;}
+  .marco-desc{font-size:0.8rem; color:var(--text-secondary); line-height:1.5; white-space:pre-line;}
+  .marco-attach{display:flex; flex-direction:column; gap:6px;}
+  .attach-empty{
+    font-size:0.75rem; padding:9px 11px; border-radius:9px; border:1px dashed var(--border);
+    background:var(--surface-1); color:var(--text-muted); text-align:center;
+  }
+  .file-chip{display:flex; align-items:center; gap:6px; font-size:0.76rem; background:var(--surface-1); border-radius:8px; padding:5px 9px;}
+  .file-chip a{color:var(--ismart-blue-dk); text-decoration:none; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .goal-extra{margin-top:14px; border-top:1px solid var(--gridline); padding-top:10px;}
+  .goal-extra summary{cursor:pointer; font-size:0.8rem; color:var(--ismart-blue-dk); font-weight:700;}
+  .goal-extra[open] summary{color:var(--text-secondary);}
+  .goal-extra .extra-body{font-size:0.8rem; color:var(--text-secondary); line-height:1.6; white-space:pre-line; margin-top:8px;}
+  .persist-note{font-size:0.8rem; color:var(--ismart-navy); background:#EAF6FD; border-radius:14px; padding:12px 16px; margin-bottom:18px; line-height:1.55;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brandrow">
+      <span class="owl">🦉</span>
+      <div>
+        <h1 id="pageTitle">Coordenação de Projetos — Painel de Tarefas</h1>
+        <p class="sub" id="pageSub">Instituto Ismart · dados extraídos em 24/08/2026 — peça uma atualização quando precisar de um snapshot novo</p>
+      </div>
+    </div>
+    <button class="theme-btn" id="themeToggle">🌓 Modo escuro</button>
+  </header>
+
+  <div class="tabs" id="mainTabs">
+    <button data-view="tasks" class="active">📋 Tarefas</button>
+    <button data-view="goals">🎯 Metas</button>
+  </div>
+
+  <div id="view-tasks">
+
+  <p class="view-intro">Acompanhe aqui o andamento das tarefas de cada projeto. Escolha um projeto e um período abaixo — o resumo, a lista e a linha do tempo se ajustam automaticamente.</p>
+
+  <div class="card filters">
+    <div class="fgroup">
+      <label>Projeto</label>
+      <select id="projectFilter"></select>
+    </div>
+    <div class="fgroup">
+      <label>Ver por</label>
+      <div class="seg" id="granSeg">
+        <button data-g="week" class="active">Semana</button>
+        <button data-g="month">Mês</button>
+        <button data-g="year">Ano</button>
+      </div>
+    </div>
+    <div class="fgroup">
+      <label>Período</label>
+      <div class="nav">
+        <button id="prevBtn">◀</button>
+        <span class="label" id="periodLabel"></span>
+        <button id="nextBtn">▶</button>
+      </div>
+    </div>
+    <div class="fgroup" style="align-self:flex-end;">
+      <button class="today-btn" id="todayBtn">Ir para hoje</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title" id="tilesTitle">Resumo do período</h2>
+    <p class="section-note">Quantas tarefas estão em cada status, considerando o período selecionado acima.</p>
+    <div class="tiles" id="tiles"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title" id="currentTitle">Tarefas nesta semana</h2>
+    <p class="section-note" id="currentNote"></p>
+    <div id="currentTableWrap"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title" id="radarTitle">Entrando no radar na próxima semana</h2>
+    <p class="section-note">Tarefas que começam a valer no próximo período e ainda não apareciam no período atual.</p>
+    <div id="radarTableWrap"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">Linha do tempo por projeto</h2>
+    <p class="section-note">Todas as tarefas de jul/2025 a nov/2026. A faixa destacada mostra o período selecionado acima.</p>
+    <div class="tl-wrap">
+      <div id="ganttRows"></div>
+      <div class="tl-axis" id="ganttAxis"></div>
+    </div>
+    <div class="legend" id="statusLegend"></div>
+  </div>
+
+  <footer class="note" id="undatedNote"></footer>
+
+  </div><!-- /view-tasks -->
+
+  <div id="view-goals" style="display:none;">
+    <p class="view-intro">Acompanhe aqui as 3 metas de 2026 ligadas aos projetos (a meta "Atingimento Painel Global" não entra, a seu pedido). Cada meta tem seus marcos — quanto mais marcos concluídos, maior a porcentagem atingida.</p>
+    <p class="persist-note">
+      💬 Os comprovantes só entram aqui através do chat comigo — assim ninguém além de você consegue anexar algo diretamente no dashboard. Envie o arquivo na conversa e eu incluo na próxima atualização. Marcar um marco como "atingido" fica salvo só nesta aba do navegador; ao recarregar a página, a marcação se perde.
+    </p>
+    <div id="goalsWrap"></div>
+  </div><!-- /view-goals -->
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+/* ---------- dataset (snapshot extraído do Monday em 10/08/2026) ---------- */
+const PROJECTS = [
+  {id:'ecossistema', name:'Projeto Ecossistema', color:'var(--proj-1)'},
+  {id:'cluster', name:'Projeto Cluster de Excelência', color:'var(--proj-2)'},
+  {id:'outliers', name:'Projeto 0,01% (Outliers)', color:'var(--proj-3)'},
+  {id:'parcerias', name:'Projeto Relacionamento Escolas', color:'var(--proj-5)'},
+];
+
+const STATUS_META = {
+  'Concluído':      {color:'var(--status-concluido)',   dot:'#0ca30c'},
+  'Em andamento':   {color:'var(--status-andamento)',   dot:'#2a78d6'},
+  'Em atenção':     {color:'var(--status-atencao)',     dot:'#fab219'},
+  'Atrasado':       {color:'var(--status-atrasado)',    dot:'#d03b3b'},
+  'Planejado':      {color:'var(--status-planejado)',   dot:'#4a3aa7'},
+  'Não iniciado':   {color:'var(--status-naoiniciado)', dot:'#898781'},
+};
+const STATUS_ORDER = ['Em andamento','Em atenção','Atrasado','Planejado','Não iniciado','Concluído'];
+
+const BOARD_IDS = {
+  ecossistema: '18425226530',
+  cluster: '18423624344',
+  outliers: '18423673948',
+  parcerias: '18425237784',
+};
+function t(projectId, group, name, status, start, end, id){
+  return {
+    projectId, group, name, status, id,
+    start: start ? new Date(start+'T00:00:00') : null,
+    end: end ? new Date(end+'T00:00:00') : (start ? new Date(start+'T00:00:00') : null),
+    url: 'https://ismart2.monday.com/boards/' + BOARD_IDS[projectId] + '/pulses/' + id,
+  };
+}
+function sub(name, status, date, url){
+  return { name, status, date: date ? new Date(date+'T00:00:00') : null, url };
+}
+
+const TASKS = [
+  // Projeto Ecossistema
+  t('ecossistema','Protocolos EB Presencial / ES / IOL/ADI','Produção dos protocolos','Em andamento','2026-07-01','2026-10-31','12723628297'),
+  t('ecossistema','Protocolos EB Presencial / ES / IOL/ADI','Validação dos protocolos pelo Comitê de Saúde Mental','Em andamento','2026-07-01','2026-10-31','12723628298'),
+  t('ecossistema','Protocolos EB Presencial / ES / IOL/ADI','Publicação dos Protocolos e do Duty of Care','Planejado','2026-09-30','2026-09-30','12723628299'),
+  t('ecossistema','Scorecard 2.0','Definir critérios para a segmentação das escolas','Concluído','2026-07-01','2026-07-31','12723628300'),
+  t('ecossistema','Scorecard 2.0','Coletar os dados das escolas','Concluído','2026-07-01','2026-07-31','12723628301'),
+  t('ecossistema','Scorecard 2.0','Construir o scorecard e publicar','Concluído','2026-08-01','2026-08-10','12723952424'),
+  t('ecossistema','Scorecard 2.0','Validar com a equipe a funcionalidade e coletar feedbacks','Concluído','2026-08-10','2026-08-31','12723969493'),
+  t('ecossistema','Treinamento com responsáveis','Definir temas, formato e responsáveis pelo treinamento','Em andamento','2026-08-01','2026-08-31','12723966279'),
+  t('ecossistema','Treinamento com responsáveis','Construir uma régua de comunicação','Atrasado','2026-08-01','2026-08-31','12724099977'),
+  t('ecossistema','Treinamento com responsáveis','Realizar treinamento 1','Planejado','2026-09-01','2026-09-30','12723966251'),
+  t('ecossistema','Treinamento com responsáveis','Realizar treinamento 2','Planejado','2026-10-01','2026-10-31','12723981077'),
+  t('ecossistema','Treinamento com responsáveis','Realizar treinamento 3','Planejado','2026-11-01','2026-11-30','12723988200'),
+
+  // Projeto Cluster de Excelência
+  t('cluster','Parte 1: Origem das informações','Mapear a coleta de dados das classificações já existentes','Concluído','2026-07-27','2026-08-09','12620291657'),
+  t('cluster','Parte 1: Origem das informações','Mapear as competências não avaliadas e possibilidade de construção de novo indicador','Concluído','2026-07-27','2026-08-09','12620306973'),
+  t('cluster','Parte 2: Lógica da ferramenta','Construir uma ferramenta de clusterização para classificação dos alunos (definição de regras de negócio de classificação, inclusive de outlier)','Em andamento','2026-08-10','2026-08-30','12620322560'),
+  t('cluster','Parte 2: Lógica da ferramenta','Validar a ferramenta e os critérios','Planejado','2026-08-24','2026-09-06','12620261052'),
+  t('cluster','Parte 2: Lógica da ferramenta','Rodar um piloto com 3 orientadores','Planejado','2026-09-07','2026-09-20','12825899940'),
+  t('cluster','Parte 2: Lógica da ferramenta','Aplicar as alterações da ferramenta de Tiers - Versão 1','Planejado','2026-10-05','2026-10-14','12620308027'),
+  t('cluster','Parte 2: Lógica da ferramenta','Fazer alterações na V1 da nova ferramenta de Tier','Planejado','2026-10-15','2026-10-31','12825932375'),
+  t('cluster','Parte 2: Lógica da ferramenta','Aplicar a V2 da ferramenta de Tier','Planejado','2026-11-02','2026-11-10','12825911115'),
+  t('cluster','Parte 2: Lógica da ferramenta','Aplicar a ferramenta de Clusterização no recorte Outubro + Novembro','Planejado','2026-11-11','2026-11-29','12825919325'),
+  t('cluster','Parte 2: Lógica da ferramenta','Construir plano de ação para transição de cluster','Planejado','2026-11-02','2026-11-30','12724533746'),
+  t('cluster','Parte 3: Consumo da ferramenta','Definição dos ciclos de classificação e divulgação interna','Em andamento','2026-08-10','2026-08-30','12620280069'),
+  t('cluster','Parte 3: Consumo da ferramenta','Definição do destino das demais classificações e dos responsáveis pelo abastecimento contínuo','Planejado','2026-08-31','2026-09-13','12620321140'),
+
+  // Projeto 0,01% (Outliers)
+  t('outliers','Parte 1: Incorporação da metodologia','Acompanhar o evento do Future Lab da Telles Foundation','Concluído','2026-07-13','2026-08-21','12628068077'),
+  t('outliers','Parte 1: Incorporação da metodologia','Mapear perfil da persona Aluno Ismart que performou bem no evento','Concluído','2026-07-23','2026-08-31','12628147039'),
+  t('outliers','Parte 2: Critérios para indicação','Definir critérios que credenciam alunos Ismart a participar de programas futuros','Planejado','2026-09-21','2026-10-11','12628082852'),
+  t('outliers','Parte 2: Critérios para indicação','Mapear se os indicadores já existentes em EB, ES, IOL e ADI conseguem atender à demanda de indicação','Planejado','2026-09-21','2026-10-11','12628147163'),
+  t('outliers','Parte 2: Critérios para indicação','Definir ciclos de classificação de aluno "Potencial Outlier"','Planejado','2026-09-21','2026-10-11','12628266210'),
+  t('outliers','Parte 3: Retroalimentação e Governança','Definir responsável pelo tema e fluxo de coleta de indicadores e ritos de acompanhamento','Planejado','2026-10-12','2026-10-25','12628266064'),
+  t('outliers','Parte 3: Retroalimentação e Governança','Rever se a régua definida em 2026 traz aprendizagens para reformulações possíveis','Planejado',null,null,'12628068533'),
+
+  // Projeto Relacionamento Escolas
+  t('parcerias','Diagnóstico','Validar o Scorecard pela Coordenação de Projetos','Concluído','2026-08-03','2026-08-16','12724328071'),
+  t('parcerias','Diagnóstico','Pilotar a pesquisa de bem-estar conduzida pela Dendenzê','Em andamento','2026-07-20','2026-09-30','12727645884'),
+  t('parcerias','Diagnóstico','Incorporar a metodologia e construir um elemento próprio de avaliação','Planejado','2026-08-31','2026-09-30','12727613056'),
+  t('parcerias','Plano de Ação','Definir ações a serem tomadas e seus responsáveis em cada cenário a partir da segmentação das escolas','Em andamento','2026-08-17','2026-09-13','12724329914'),
+  t('parcerias','Plano de Ação','Definir periodicidade das ações','Em andamento','2026-08-17','2026-09-13','12724386288'),
+  t('parcerias','Plano de Ação','Construir um documento norteador, em que o racional por trás de cada ação esteja consolidado para revisões futuras','Não iniciado','2026-08-17','2026-09-13','12724369086'),
+  t('parcerias','Plano de Ação','Validar o plano de ação com Mari, Bárbara, Patrícia e Simone','Planejado','2026-09-14','2026-09-27','12724395087'),
+];
+
+/* ---------- subelementos (Monday "Subelementos") — exibidos dentro da tarefa-mãe,
+   não contam nos totais/resumo nem na linha do tempo ---------- */
+const SUBITEMS = {
+  '12723628298': [ // Validação dos protocolos pelo Comitê de Saúde Mental
+    sub('Protocolo Risco Suicida','Concluído','2026-07-31','https://ismart2.monday.com/boards/18425227153/pulses/12723723632'),
+    sub('Protocolo Família Indisponível ou Incapaz','Concluído','2026-07-31','https://ismart2.monday.com/boards/18425227153/pulses/12723688672'),
+    sub('Protocolo Sofrimento Psíquico e Crises em Saúde Mental','Concluído','2026-08-10','https://ismart2.monday.com/boards/18425227153/pulses/12723705935'),
+    sub('Protocolo Violência','Atrasado','2026-08-24','https://ismart2.monday.com/boards/18425227153/pulses/12761390468'),
+    sub('Protocolo Substâncias e comportamentos aditivos','Planejado','2026-09-08','https://ismart2.monday.com/boards/18425227153/pulses/12761389211'),
+    sub('Protocolo Bullying e Cyberbullying','Planejado','2026-09-21','https://ismart2.monday.com/boards/18425227153/pulses/12761365023'),
+    sub('Protocolo Discriminação','Planejado','2026-10-05','https://ismart2.monday.com/boards/18425227153/pulses/12761395263'),
+    sub('Protocolo Vulnerabilidade social e material','Planejado','2026-10-19','https://ismart2.monday.com/boards/18425227153/pulses/12761374924'),
+  ],
+  '12723628299': [ // Publicação dos Protocolos e do Duty of Care
+    sub('Comunicação institucional para equipe de coordenadores e orientadores dos documentos norteadores','Planejado',null,'https://ismart2.monday.com/boards/18425227153/pulses/12723725789'),
+    sub('Construção de um espaço intuitivo e de fácil acesso para consulta','Planejado',null,'https://ismart2.monday.com/boards/18425227153/pulses/12723726319'),
+    sub('Estratégias de formação continuada para uso dos instrumentos','Planejado',null,'https://ismart2.monday.com/boards/18425227153/pulses/12723706743'),
+  ],
+  '12628147163': [ // Mapear se os indicadores já existentes... (Outliers)
+    sub('Caso negativo, construir a regra de negócio para construção do indicador novo',null,null,'https://ismart2.monday.com/boards/18423673989/pulses/12628266148'),
+  ],
+  '12727645884': [ // Pilotar a pesquisa de bem-estar conduzida pela Dendenzê
+    sub('Definir escolas para aplicação de piloto','Concluído','2026-08-16','https://ismart2.monday.com/boards/18425237794/pulses/12727667500'),
+    sub('Validar as perguntas da pesquisa','Concluído','2026-08-23','https://ismart2.monday.com/boards/18425237794/pulses/12727675509'),
+    sub('Comunicar as 3 escolas sobre a pesquisa','Concluído','2026-08-23','https://ismart2.monday.com/boards/18425237794/pulses/12797257687'),
+    sub('Aplicação da pesquisa piloto em 3 escolas','Planejado','2026-09-06','https://ismart2.monday.com/boards/18425237794/pulses/12734417581'),
+  ],
+  '12724386288': [ // Definir periodicidade das ações
+    sub('Construir um calendário para 2026','Em andamento','2026-09-13','https://ismart2.monday.com/boards/18425237794/pulses/12761319995'),
+    sub('Construir um calendário para 2027','Não iniciado','2026-09-13','https://ismart2.monday.com/boards/18425237794/pulses/12761325319'),
+    sub('Construir um calendário paralelo de ações de relacionamento contínuos com as escolas em datas estratégicas para fortalecer parcerias','Concluído','2026-09-13','https://ismart2.monday.com/boards/18425237794/pulses/12761339860'),
+  ],
+};
+let expandedTasks = new Set();
+
+const TODAY = new Date('2026-08-24T00:00:00');
+
+/* ---------- date helpers ---------- */
+function startOfWeek(d){ const dt=new Date(d); const day=(dt.getDay()+6)%7; dt.setDate(dt.getDate()-day); dt.setHours(0,0,0,0); return dt; }
+function endOfWeek(d){ const s=startOfWeek(d); const e=new Date(s); e.setDate(e.getDate()+6); return e; }
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function endOfMonth(d){ return new Date(d.getFullYear(), d.getMonth()+1, 0); }
+function startOfYear(d){ return new Date(d.getFullYear(), 0, 1); }
+function endOfYear(d){ return new Date(d.getFullYear(), 11, 31); }
+function addUnits(d, gran, n){
+  const dt = new Date(d);
+  if(gran==='week') dt.setDate(dt.getDate()+7*n);
+  else if(gran==='month') dt.setMonth(dt.getMonth()+n);
+  else dt.setFullYear(dt.getFullYear()+n);
+  return dt;
+}
+function fmt(d){ if(!d) return '—'; return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'}); }
+function fmtShort(d){ return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short'}); }
+
+function periodRange(gran, anchor){
+  if(gran==='week') return [startOfWeek(anchor), endOfWeek(anchor)];
+  if(gran==='month') return [startOfMonth(anchor), endOfMonth(anchor)];
+  return [startOfYear(anchor), endOfYear(anchor)];
+}
+function periodLabel(gran, anchor){
+  const [s,e] = periodRange(gran, anchor);
+  if(gran==='week') return `${fmt(s)} – ${fmt(e)}`;
+  if(gran==='month') return s.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  return String(s.getFullYear());
+}
+function granWord(gran, cap){
+  const w = gran==='week'?'semana':gran==='month'?'mês':'ano';
+  return cap ? w.charAt(0).toUpperCase()+w.slice(1) : w;
+}
+
+function overlaps(task, start, end){
+  if(!task.start) return false;
+  const tEnd = task.end || task.start;
+  return task.start <= end && tEnd >= start;
+}
+
+/* ---------- state ---------- */
+let state = { gran:'week', anchor: new Date(TODAY), project:'all' };
+
+/* ---------- populate project filter ---------- */
+const projSel = document.getElementById('projectFilter');
+projSel.innerHTML = '<option value="all">Todos os projetos</option>' +
+  PROJECTS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+projSel.addEventListener('change', ()=>{ state.project = projSel.value; render(); });
+
+document.getElementById('granSeg').addEventListener('click', e=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  state.gran = btn.dataset.g;
+  [...document.querySelectorAll('#granSeg button')].forEach(b=>b.classList.toggle('active', b===btn));
+  render();
+});
+document.getElementById('prevBtn').addEventListener('click', ()=>{ state.anchor = addUnits(state.anchor, state.gran, -1); render(); });
+document.getElementById('nextBtn').addEventListener('click', ()=>{ state.anchor = addUnits(state.anchor, state.gran, 1); render(); });
+document.getElementById('todayBtn').addEventListener('click', ()=>{ state.anchor = new Date(TODAY); render(); });
+
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  const html = document.documentElement;
+  const cur = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', cur==='dark' ? 'light' : 'dark');
+});
+
+const tooltip = document.getElementById('tooltip');
+function showTip(html, x, y){ tooltip.innerHTML = html; tooltip.style.left=(x+12)+'px'; tooltip.style.top=(y+12)+'px'; tooltip.style.opacity=1; }
+function hideTip(){ tooltip.style.opacity=0; }
+
+function statusBadge(status){
+  if(!status) return `<span class="badge" style="background:#89878122; color:#898781;"><span class="dot" style="background:#898781;"></span>Sem status</span>`;
+  const m = STATUS_META[status] || {dot:'#898781'};
+  return `<span class="badge" style="background:${m.dot}22; color:${m.dot};"><span class="dot" style="background:${m.dot};"></span>${status}</span>`;
+}
+function projectName(id){ return PROJECTS.find(p=>p.id===id)?.name || id; }
+function projectColor(id){ return PROJECTS.find(p=>p.id===id)?.color || '#898781'; }
+
+function filteredTasks(){
+  return state.project==='all' ? TASKS : TASKS.filter(x=>x.projectId===state.project);
+}
+
+/* subelemento ainda não concluído com o prazo (date) mais próximo (pode ser passado, se atrasado) */
+function nearestOpenSub(task){
+  const subs = SUBITEMS[task.id];
+  if(!subs) return null;
+  const open = subs.filter(s=> s.status!=='Concluído' && s.date);
+  if(!open.length) return null;
+  return open.reduce((a,b)=> a.date <= b.date ? a : b);
+}
+/* data efetiva usada para priorização: a mais próxima entre o período da tarefa e o
+   subelemento aberto mais urgente — assim um subelemento com prazo mais apertado
+   "puxa" a tarefa para cima na lista, mesmo que o Período da tarefa-mãe seja mais largo */
+function effectiveEnd(task){
+  const sub = nearestOpenSub(task);
+  if(!task.end) return sub ? sub.date : null;
+  if(!sub) return task.end;
+  return sub.date < task.end ? sub.date : task.end;
+}
+/* days remaining until the effective deadline (Período da tarefa ou subelemento mais urgente), relativo a hoje */
+function daysUntil(task){
+  const end = effectiveEnd(task);
+  if(!end) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const e = new Date(end); e.setHours(0,0,0,0);
+  return Math.round((e-now)/86400000);
+}
+function urgencySortKey(task){
+  const d = daysUntil(task);
+  return d===null ? Infinity : d;
+}
+function urgencyHtml(task){
+  const d = daysUntil(task);
+  const sub = nearestOpenSub(task);
+  const drivenBySub = sub && (!task.end || sub.date < task.end);
+  const marker = drivenBySub
+    ? ` <span class="urgency-sub-flag" title="Prazo puxado pelo subelemento: ${sub.name.replace(/"/g,'&quot;')}">🔹</span>`
+    : '';
+  if(d===null) return '<span class="period-txt">—</span>';
+  if(d<0){
+    const label = task.status==='Concluído' ? `encerrado há ${Math.abs(d)}d` : `atrasado ${Math.abs(d)}d`;
+    return `<span class="urgency urgency-late">${label}</span>${marker}`;
+  }
+  if(d===0) return `<span class="urgency urgency-today">vence hoje</span>${marker}`;
+  const cls = d<=3 ? 'urgency-soon' : d<=10 ? 'urgency-mid' : 'urgency-far';
+  return `<span class="urgency ${cls}">faltam ${d}d</span>${marker}`;
+}
+
+function renderTable(list, wrapId, emptyMsg){
+  const wrap = document.getElementById(wrapId);
+  if(list.length===0){ wrap.innerHTML = `<p class="empty-msg">${emptyMsg}</p>`; return; }
+  const rows = list
+    .slice()
+    .sort((a,b)=> urgencySortKey(a) - urgencySortKey(b))
+    .map(x=>{
+      const subs = SUBITEMS[x.id];
+      const isOpen = expandedTasks.has(x.id);
+      const toggle = subs ? `<button class="sub-toggle" data-task="${x.id}">${isOpen?'▾':'▸'} ${subs.length} subelemento${subs.length>1?'s':''}</button>` : '';
+      const mainRow = `
+      <tr>
+        <td><span class="proj-chip"><span class="dot" style="background:${projectColor(x.projectId)};"></span>${projectName(x.projectId)}</span></td>
+        <td>${x.group}</td>
+        <td><a class="item-link" href="${x.url}" target="_blank" rel="noopener">${x.name}</a>${toggle}</td>
+        <td>${statusBadge(x.status)}</td>
+        <td class="period-txt">${x.start ? fmt(x.start)+' – '+fmt(x.end) : 'sem período definido'}</td>
+        <td>${urgencyHtml(x)}</td>
+      </tr>`;
+      if(!subs || !isOpen) return mainRow;
+      const subRows = subs.map(s=>`
+        <tr class="sub-row">
+          <td></td>
+          <td></td>
+          <td class="sub-cell"><span class="sub-bullet">↳</span><a class="item-link sub-link" href="${s.url}" target="_blank" rel="noopener">${s.name}</a></td>
+          <td>${statusBadge(s.status)}</td>
+          <td class="period-txt">${s.date ? fmt(s.date) : 'sem data'}</td>
+          <td></td>
+        </tr>`).join('');
+      return mainRow + subRows;
+    }).join('');
+  wrap.innerHTML = `<table><thead><tr><th>Projeto</th><th>Grupo</th><th>Tarefa</th><th>Status</th><th>Período</th><th>Faltam para finalização prevista</th></tr></thead><tbody>${rows}</tbody></table>`;
+  wrap.querySelectorAll('.sub-toggle').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const id = btn.dataset.task;
+      if(expandedTasks.has(id)) expandedTasks.delete(id); else expandedTasks.add(id);
+      render();
+    });
+  });
+}
+
+function render(){
+  const [ps, pe] = periodRange(state.gran, state.anchor);
+  const [ns, ne] = periodRange(state.gran, addUnits(state.anchor, state.gran, 1));
+  document.getElementById('periodLabel').textContent = periodLabel(state.gran, state.anchor);
+
+  const tasks = filteredTasks();
+  const current = tasks.filter(x=>overlaps(x, ps, pe));
+  const nextP = tasks.filter(x=>overlaps(x, ns, ne));
+  const radar = nextP.filter(x=>!overlaps(x, ps, pe));
+
+  // titles
+  const gw = granWord(state.gran, false);
+  document.getElementById('currentTitle').textContent = `Tarefas ${state.gran==='week' ? 'nesta semana' : state.gran==='month' ? 'neste mês' : 'neste ano'}`;
+  document.getElementById('currentNote').textContent = `${current.length} tarefa(s) com Período tocando ${fmt(ps)} – ${fmt(pe)}, de qualquer status.`;
+  document.getElementById('radarTitle').textContent = `Entrando no radar n${state.gran==='week'?'a próxima semana':state.gran==='month'?'o próximo mês':'o próximo ano'}`;
+  document.getElementById('tilesTitle').textContent = `Resumo — ${periodLabel(state.gran, state.anchor)}`;
+
+  // tiles
+  const counts = {}; STATUS_ORDER.forEach(s=>counts[s]=0);
+  current.forEach(x=>{ counts[x.status] = (counts[x.status]||0)+1; });
+  document.getElementById('tiles').innerHTML = STATUS_ORDER.map(s=>{
+    const m = STATUS_META[s];
+    return `<div class="tile"><div class="n">${counts[s]||0}</div><div class="l"><span class="dot" style="background:${m.dot};"></span>${s}</div></div>`;
+  }).join('');
+
+  renderTable(current, 'currentTableWrap', 'Nenhuma tarefa com Período tocando este intervalo.');
+  renderTable(radar, 'radarTableWrap', 'Nenhuma tarefa nova entra no radar no próximo período — tudo que aparecer lá já está nesta janela.');
+
+  renderGantt();
+
+  const undated = tasks.filter(x=>!x.start);
+  document.getElementById('undatedNote').innerHTML = undated.length
+    ? `⚠️ ${undated.length} tarefa(s) sem Período definido no Monday (não entram nos filtros de tempo): ${undated.map(x=>`"${x.name}" (${projectName(x.projectId)})`).join(', ')}.`
+    : '';
+}
+
+/* ---------- gantt ---------- */
+const GANTT_MIN = new Date('2025-07-01T00:00:00');
+const GANTT_MAX = new Date('2026-12-05T00:00:00');
+function xPos(d){ return (d-GANTT_MIN)/(GANTT_MAX-GANTT_MIN)*100; }
+
+function renderGantt(){
+  const projects = state.project==='all' ? PROJECTS : PROJECTS.filter(p=>p.id===state.project);
+  const [ps, pe] = periodRange(state.gran, state.anchor);
+  const bandLeft = Math.max(0, xPos(ps));
+  const bandWidth = Math.min(100, xPos(pe)) - bandLeft;
+
+  const rowsHtml = projects.map(p=>{
+    const items = TASKS.filter(x=>x.projectId===p.id && x.start);
+    const bars = items.map(x=>{
+      const left = xPos(x.start), width = Math.max(0.6, xPos(x.end)-xPos(x.start));
+      const m = STATUS_META[x.status];
+      return `<div class="tl-bar" data-tip="${encodeURIComponent(`<b>${x.name}</b><br>${p.name} · ${x.group}<br>${x.status}<br>${fmt(x.start)} – ${fmt(x.end)}`)}"
+        style="left:${left}%; width:${width}%; background:${m.dot};"></div>`;
+    }).join('');
+    return `<div class="tl-row">
+      <div class="tl-label"><span class="dot" style="background:${p.color};"></span>${p.name}</div>
+      <div class="tl-track">
+        <div class="tl-band" style="left:${bandLeft}%; width:${bandWidth}%;"></div>
+        ${bars}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('ganttRows').innerHTML = rowsHtml;
+
+  // axis: month ticks
+  const ticks = [];
+  let cur = new Date(GANTT_MIN.getFullYear(), GANTT_MIN.getMonth(), 1);
+  while(cur <= GANTT_MAX){
+    ticks.push(new Date(cur));
+    cur = new Date(cur.getFullYear(), cur.getMonth()+2, 1);
+  }
+  document.getElementById('ganttAxis').innerHTML = ticks.map(d=>
+    `<span style="left:${xPos(d)}%;">${fmtShort(d)}</span>`).join('');
+
+  // tooltips
+  document.querySelectorAll('.tl-bar').forEach(el=>{
+    el.addEventListener('mousemove', e=>showTip(decodeURIComponent(el.dataset.tip), e.clientX, e.clientY));
+    el.addEventListener('mouseleave', hideTip);
+  });
+
+  document.getElementById('statusLegend').innerHTML = STATUS_ORDER.map(s=>{
+    const m = STATUS_META[s];
+    return `<span class="it"><span class="dot" style="background:${m.dot};"></span>${s}</span>`;
+  }).join('');
+}
+
+render();
+
+/* ============================================================ */
+/* ---------- Metas (Painel de Metas 2026 — snapshot) ---------- */
+/* ============================================================ */
+const GOALS = [
+  {
+    id:'ecossistema',
+    color:'var(--proj-1)',
+    diretriz:'2.1 Atualizar e pilotar plano de desdobramento do Duty of Care, com foco em garantir perenidade das iniciativas (novas discussões e realinhamentos) e produção de protocolos unificados.',
+    meta:'Desdobramentos Ecossistema',
+    peso:'15%',
+    qualificador:'Macroentregas de Projeto',
+    bandas:[{n:3,pct:70},{n:4,pct:85},{n:5,pct:100}],
+    apuracao:'15/01/2027',
+    marcos:[
+      {id:'eco-1', titulo:'Protocolos EB Presencial', desc:'Protocolo(s) de cuidado para o EB Presencial desenvolvidos a partir das prioridades definidas pelo Comitê de Saúde Mental e por ele aprovados (ancorados no Duty of Care), com treinamento do time responsável.', comprovantes:[]},
+      {id:'eco-2', titulo:'Protocolos ES', desc:'Protocolo(s) de cuidado para o ES desenvolvidos a partir das prioridades definidas pelo Comitê de Saúde Mental e por ele aprovados (ancorados no Duty of Care), com treinamento do time responsável.', comprovantes:[]},
+      {id:'eco-3', titulo:'Protocolos IOL/ADI', desc:'Protocolo(s) de cuidado para o IOL/ADI desenvolvidos a partir das prioridades definidas pelo Comitê de Saúde Mental e por ele aprovados (ancorados no Duty of Care), com treinamento do time responsável.', comprovantes:[]},
+      {id:'eco-4', titulo:'Fortalecimento das escolas', desc:'Matriz de escolas (scorecard 2.0) atualizada com adição de inputs de alunos, responsáveis e time Ismart.\nO scorecard deve avaliar: 1) Performance acadêmica; 2) Competências de sucesso (ofertas de oportunidades de desenvolvimento para além do acadêmico, feito pela escola); 3) Avaliação de práticas de inclusão; 4) NPS de alunos e responsáveis.', comprovantes:[]},
+      {id:'eco-5', titulo:'Treinamentos com responsáveis', desc:'3 encontros formativos com responsáveis realizados até novembro, com pauta vinculada ao Duty of Care e registro de presença.', comprovantes:[]},
+    ],
+    extra:'Comitê de Saúde Mental: Patrícia, Júlia, Marcela, Paulo e Diego.'
+  },
+  {
+    id:'cluster',
+    color:'var(--proj-2)',
+    diretriz:'3.4 Pilotar metodologia para metrificação dos critérios do clusters de excelência para além dos critérios acadêmicos e pilotar (c/ I&D).',
+    meta:'Clusters de excelência',
+    peso:'15%',
+    qualificador:'Macroentregas de Projeto',
+    bandas:[{n:3,pct:70},{n:4,pct:85},{n:5,pct:100}],
+    apuracao:'15/01/2027',
+    marcos:[
+      {id:'clu-1', titulo:'Atualização da classificação dos Clusters (Presencial)', desc:'Atualização da classificação dos Clusters de Excelência com inputs existentes para o Presencial até 30/04/26.\nIndicador/prova: entrega dos clusters atualizados com os parâmetros atuais (acadêmicos).', comprovantes:[]},
+      {id:'clu-2', titulo:'Identificação dos gargalos de dado e regra', desc:'Identificação dos gargalos (de dado e regra) para a classificação completa dos Clusters, bem como delimitação das regras de negócio para cada cluster.\nIndicador/prova: definição das variáveis mais relevantes e a relação entre elas; se necessário, sugestão de novos inputs de dados.', comprovantes:[]},
+      {id:'clu-3', titulo:'Construção de ferramenta de clusterização', desc:'Construção de ferramenta de clusterização até 30/09/26.\nIndicador/prova: ferramenta validada após pilotos para ajuste das regras de negócio, com criação de baseline para 2027.', comprovantes:[]},
+      {id:'clu-4', titulo:'Requisitos dos orientadores', desc:'Definição de requisitos dos orientadores para utilizarem a metodologia.\nIndicador/prova: matriz com treinamentos e validações para garantir aptidão de orientadores/coordenadores para operar a nova clusterização.', comprovantes:[]},
+      {id:'clu-5', titulo:'Mapeamento de ações para transição de clusters', desc:'Mapeamento das ações para transição de Clusters (Quase Lá > Padrão e Padrão > Referência) com identificação de oportunidades.\nIndicador/prova: mapeamento das ações do Programa de Desenvolvimento (incl. hubs), avaliando se o novo PDEB já contempla a transição ou se precisa ser robustecido — com racional para cada ação proposta.', comprovantes:[]},
+    ],
+    extra:'Considerações:\n- Meta focada no Ismart Presencial.\n- Busca otimizar as classificações dos alunos (Hubs; Tiers; Clusters de Excelência; Classificação EB; Diamantes; Super Destaques...), sem eliminá-las — criando uma lógica que elimine redundâncias.\n- Dois pilares de dados no projeto: (1) os já existentes; (2) os que precisarão ser criados para compor a nova classificação.'
+  },
+  {
+    id:'outliers',
+    color:'var(--proj-3)',
+    diretriz:'3.3 Pilotar desdobramentos do 0,01% (Proxies de sucesso; treinamento de profissionais da ponta; desenho de programa perene).',
+    meta:'Continuidade do Projeto 0,01%',
+    peso:'15%',
+    qualificador:'Macroentregas de Projeto',
+    bandas:[{n:3,pct:70},{n:4,pct:85},{n:5,pct:100}],
+    apuracao:'15/01/2027',
+    marcos:[
+      {id:'out-1', titulo:'Critérios e perfis de Outliers refinados e documentados', desc:'Revisão dos perfis (SHM) e critérios de identificação (MIRA) incorporando aprendizados do piloto 2025, concluída até abril.\nConsolidação a partir de insights da sessão em Londres com TF e parceiros estratégicos (Fundação Behring e Instituto Stone) até fevereiro.', comprovantes:[]},
+      {id:'out-2', titulo:'Processo de identificação estruturado, aplicado e testado', desc:'Definição das jornadas de identificação com parceiros (Ismart, Behring e Estudar) para treinamento de aplicação dos critérios, até março.\nRotinas quinzenais de acompanhamento e alinhamento do processo para garantir identificação de jovens potenciais para a Imersão 2.0, até julho.', comprovantes:[]},
+      {id:'out-3', titulo:'Modelo de desenvolvimento e acompanhamento de Outliers', desc:'Desenho do modelo de desenvolvimento e acompanhamento (objetivos, formatos de apoio e papéis dos stakeholders).\nAplicação do modelo com os 3 Outliers do Piloto 2025, com registro de aprendizados e ajustes iniciais, a serem concluídos até outubro.', comprovantes:[]},
+      {id:'out-4', titulo:'Imersão 2.0 realizada', desc:'Desenho e realização da Imersão 2.0 (Ens. Médio e Ens. Superior) até agosto.\nAplicação dos critérios refinados como segundo piloto de identificação, com coleta de evidências e aprendizados.\nFeedback de pelo menos 80% dos participantes com avaliação positiva até setembro.', comprovantes:[]},
+      {id:'out-5', titulo:'Insumos estratégicos consolidados para o Conselho TF', desc:'Validação do Conselho sobre refinamento do conceito e critérios, alternativas de proxies de sucesso e direcionamento para os próximos anos — a ser apresentado em setembro.', comprovantes:[]},
+    ],
+    extra:''
+  },
+];
+
+/* "done" fica só em memória do navegador (reseta ao recarregar). Os comprovantes (comprovantes: []
+   em cada marco, acima) são fixos nos dados — só eu incluo, a partir dos arquivos que você me envia
+   pelo chat, para que ninguém além de você consiga anexar algo diretamente no dashboard. */
+const goalState = {}; // { marcoId: { done:bool } }
+GOALS.forEach(g=>g.marcos.forEach(m=> goalState[m.id] = {done:false}));
+
+function bandForCount(bandas, count){
+  let hit = null;
+  bandas.forEach(b=>{ if(count >= b.n) hit = b; });
+  return hit; // null if below the lowest band
+}
+
+function renderGoals(){
+  const wrap = document.getElementById('goalsWrap');
+  wrap.innerHTML = GOALS.map(g=>{
+    const doneCount = g.marcos.filter(m=>goalState[m.id].done).length;
+    const band = bandForCount(g.bandas, doneCount);
+    const pct = band ? band.pct : 0;
+    const bandLabel = band ? `${band.pct}% atingido (${doneCount}/${g.marcos.length} macroentregas — banda de ${band.n}+)` : `${doneCount}/${g.marcos.length} macroentregas concluídas — abaixo da 1ª banda (${g.bandas[0].n} entregas = 70%)`;
+
+    const marcosHtml = g.marcos.map(m=>{
+      const st = goalState[m.id];
+      const comprovantes = m.comprovantes || [];
+      const filesHtml = comprovantes.length
+        ? comprovantes.map(f=>`
+            <div class="file-chip">
+              <a href="${f.url}" target="_blank" rel="noopener" title="${f.name}">📎 ${f.name}</a>
+            </div>`).join('')
+        : `<div class="attach-empty">Sem comprovante ainda — envie o arquivo pelo chat para eu incluir aqui.</div>`;
+      return `
+      <div class="marco">
+        <input type="checkbox" data-marco="${m.id}" ${st.done ? 'checked' : ''}>
+        <div>
+          <p class="marco-title ${st.done?'done':''}">${m.titulo}</p>
+          <p class="marco-desc">${m.desc}</p>
+        </div>
+        <div class="marco-attach">
+          ${filesHtml}
+        </div>
+      </div>`;
+    }).join('');
+
+    return `
+    <div class="goal-card" style="border-left-color:${g.color};">
+      <div class="goal-head">
+        <div>
+          <h3><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${g.color};margin-right:7px;"></span>${g.meta}</h3>
+          <p class="goal-diretriz">${g.diretriz}</p>
+          <div class="goal-meta-row">
+            <span>Peso da meta: ${g.peso}</span>
+            <span>Qualificador: ${g.qualificador}</span>
+            <span>Apuração: ${g.apuracao}</span>
+            <span>Bandas: ${g.bandas.map(b=>`${b.n} entregas = ${b.pct}%`).join(' · ')}</span>
+          </div>
+        </div>
+        <div class="goal-progress">
+          <div class="pct">${pct}%</div>
+          <div class="band">${bandLabel}</div>
+          <div class="bandbar"><div class="fill" style="width:${Math.min(100,(doneCount/g.marcos.length)*100)}%;"></div></div>
+        </div>
+      </div>
+      <div class="goal-body">
+        ${marcosHtml}
+        ${g.extra ? `<details class="goal-extra"><summary>Considerações / observações da meta</summary><div class="extra-body">${g.extra}</div></details>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // wire events
+  wrap.querySelectorAll('input[type=checkbox][data-marco]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      goalState[cb.dataset.marco].done = cb.checked;
+      renderGoals();
+    });
+  });
+}
+
+/* ---------- tab switching ---------- */
+document.getElementById('mainTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  [...document.querySelectorAll('#mainTabs button')].forEach(b=>b.classList.toggle('active', b===btn));
+  const view = btn.dataset.view;
+  document.getElementById('view-tasks').style.display = view==='tasks' ? '' : 'none';
+  document.getElementById('view-goals').style.display = view==='goals' ? '' : 'none';
+  document.getElementById('pageTitle').textContent = view==='tasks'
+    ? 'Coordenação de Projetos — Painel de Tarefas'
+    : 'Coordenação de Projetos — Painel de Metas';
+  document.getElementById('pageSub').textContent = view==='tasks'
+    ? 'Workspace Monday · 4 quadros · dados extraídos em 24/08/2026 (snapshot — peça um novo para atualizar)'
+    : 'Snapshot do Painel de Metas 2026 baixado em 07/08/26 · metas ligadas aos projetos (Painel Global excluído)';
+  if(view==='goals') renderGoals();
+});
+</script>
+</body>
+</html>
